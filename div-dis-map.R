@@ -17,7 +17,11 @@ library(tidyverse)
 library(urbnmapr)
 library(rnaturalearth)
 library(plotly)
+library(extrafont)
 
+#font_import(path = "C:/Users/*insert your user name*/AppData/Local/Microsoft/Windows/Fonts", pattern = ".TTF")
+
+loadfonts()
 #devtools::install_github("UrbanInstitute/urbnmapr")
 #devtools::install_github("ropensci/rnaturalearth")
 #https://urbaninstitute.github.io/urbnmapr/index.html
@@ -43,10 +47,12 @@ inst <- inst %>%
 # CARNEGIE: Carnegie classification: Remove faith-based 
 # HLOFFER: Highest Degree Offered. Bachelors to Doctorate
 # C18SZSET: Institution Classification. At least four years.
+# CARNEGIE: Removed specialized schools (faith-based, medical, Schools of engineering and technology, Schools of business and management, Schools of art, music, and design, Schools of law Teachers colleges, Other specialized institutions) and not accredited (CARNEGIE ==-2), keep tribal (60).
+
 sites <- inst %>% 
   filter(ICLEVEL==1,HLOFFER>=5,
          C18SZSET>=15,
-         CARNEGIE!=51) 
+         CARNEGIE < 51 | CARNEGIE ==60, CARNEGIE != -2)
 
 #HBCU <- sites %>% 
 #  filter(HBCU ==1)
@@ -98,7 +104,14 @@ perc.student <- read_csv('data_raw/DRVEF2018.csv') %>%
 
 
 #### Merge faculty data from S2018_IS ####
-#### HRTOTLT, HRAIANT, HRAIANM, HRAIANW, HRASIAT,HRASIAM, HRASIAW, HRBKAAT, HRBKAAM, HRBKAAW, HRHISPT, HRHISPM, HRHISPW, HRNHPIT, HRNHPIM, HRNHPIW, HRWHITT, HRWHITM, HRWHITW, HR2MORT, HR2MORM, HR2MORW
+#HRTOTLT: Grand total
+#HRAIANT/HRAIANM/HRAIANW: American Indian or Alaska Native total/men/women
+#HRASIAT/HRASIAM/HRASIAW: Asian total/men/women
+#HRBKAAT/HRBKAAM/HRBKAAW: Black or African American total/men/women
+#HRHISPT/HRHISPM/HRHISPW Hispanic or Latino total/men/women
+#HRNHPIT/HRNHPIM/HRNHPIW: Native Hawaiian or Other Pacific Islander total/men/women
+#HRWHITT, HRWHITM, HRWHITW: White total/men/women
+#HR2MORT, HR2MORM, HR2MORW: Two or more races total/men/women
 
 axes.faculty <-
   c('UNITID', 'HRTOTLT', 'HRAIANT', 'HRAIANM', 'HRAIANW', 'HRASIAT','HRASIAM', 'HRASIAW', 'HRBKAAT', 'HRBKAAM', 'HRBKAAW', 'HRHISPT', 'HRHISPM', 'HRHISPW', 'HRNHPIT', 'HRNHPIM', 'HRNHPIW', 'HRWHITT', 'HRWHITM', 'HRWHITW', 'HR2MORT', 'HR2MORM', 'HR2MORW')
@@ -110,12 +123,13 @@ perc.faculty <- read_csv('data_raw/S2018_IS.csv') %>%
   select(all_of(axes.faculty)) %>% 
   right_join(perc.student,by = "UNITID")
 
-# Hispanic/Latinx disparity
+# Hispanic / Latinx Disparity
+perc.faculty$faculty_hs <- round(perc.faculty$HRHISPT/perc.faculty$HRTOTLT*100,2)
 perc.faculty$disp_hs <- round(perc.faculty$PCTENRHS-
-  (perc.faculty$HRHISPT/perc.faculty$HRTOTLT*100),2)
+  perc.faculty$faculty_hs,2)
 disparity_hs <- filter(perc.faculty, !is.na(disp_hs))
 
-# Black disparity
+# African American / Black Disparity
 perc.faculty$faculty_bk <- round(perc.faculty$HRBKAAT/perc.faculty$HRTOTLT*100,2)
 perc.faculty$disp_bk <- round(perc.faculty$PCTENRBK-
                                 perc.faculty$faculty_bk,2)
@@ -126,35 +140,36 @@ disparity_bk <- filter(perc.faculty, !is.na(disp_bk))
 #### 4-year institutions (ICLEVEL==1)
 #### Offers Bachelor's degree or higher (HLOFFER>=5)
 #### 4-year large (C18SZSET>=15)
-#### Remove faith-based institutions (CARNEGIE!=51) 
+#### Remove faith-based institutions (CARNEGIE!=51) and other specialized institutions (CARNEGIE == 51:59)
 #### All faculty ranks (ARANK==0)
 #### All full-time instructional staff (FACSTAT == 0)
-#### Allfull-time insructional staff (SISCAT == 1)
+#### All full-time instructional staff (SISCAT == 1)
 
 #### Disparity Map - Hispanic/LatinX ####
-hisp <- states_sf_pr %>% 
-  ggplot(aes()) +
-  geom_sf(fill = "grey", color = "#ffffff")+
+hisp <- ggplot() +
+  geom_sf(data=states_sf_pr, fill = "grey", color = "#ffffff")+
   theme_map()+
   geom_point(data = disparity_hs, 
              aes(x = LONGITUD, y = LATITUDE,
-                 color = disp_hs, size = PCTENRHS), shape = 19)+
-  scale_color_viridis_c(option = "magma")+
-  labs(title = "Academic Diversity Disparity Map - Hispanic/Latinx")+
+                 color = disp_hs, size = PCTENRHS,
+                 text = paste(INSTNM, "<br>", 
+                              "Student: ", PCTENRHS,"%", "<br>",
+                              "Faculty: ", faculty_hs,"%",'<br>',
+                              "Disparity: ", disp_hs,"%", sep = "")), 
+                 shape = 19)+
+  scale_color_viridis_c(option = "magma", 
+                        name = "Disparity (%)")+
+  scale_size("Percent Student", range = c(0, 2))+
+  labs(title = "Academic Diversity Disparity Map - Hispanic / Latinx")+
   theme(legend.position="bottom", 
         legend.justification = "center",
         legend.title = element_blank(),
         legend.margin = 
-          margin(t = 0, r = 1.5, b = 0, l = 0, unit = "cm"))+
-  guides(size = guide_legend(order=1))+
-  annotate("text", x = -103, y = 14, 
-           label = "Percent Student Hispanic/Latinx")+
-  annotate("text", x = -82, y = 14, 
-           label = "Percent Disparity")+
-  coord_sf(xlim = c(-125, -60), 
-                  ylim = c(15, 50), clip = "off")
+          margin(t = 0, r = 1.5, b = 0, l = 0, unit = "cm"),
+        text = element_text(family = "Roboto Light"))
 
-#### Disparity Map - African American/Black ####
+ggplotly(hisp, tooltip = c('text'))
+#### Disparity Map - African American / Black ####
 aabk <- ggplot()+
   geom_sf(data=states_sf_pr, fill = "grey", color = "#ffffff")+
   theme_map()+
@@ -162,26 +177,23 @@ aabk <- ggplot()+
              aes(x = LONGITUD, y = LATITUDE,
                  color = disp_bk, size = PCTENRBK,
                  text = paste(INSTNM, "<br>", 
-                              "Student:", PCTENRBK,"%", "<br>",
-                              "Faculty:", faculty_bk,"%",'<br>',
-                              "Disparity:", disp_bk,"%")), 
+                              "Student: ", PCTENRBK,"%", "<br>",
+                              "Faculty: ", faculty_bk,"%",'<br>',
+                              "Disparity :", disp_bk,"%", sep = "")), 
              shape = 19)+
-  scale_color_viridis_c(option="magma")+
-  labs(title = "Academic Diversity Disparity Map - African American/Black")+
+  scale_color_viridis_c(option="magma", 
+                        name = "Disparity (%)")+
+  scale_size("Percent Student", range = c(0, 2))+
+  labs(title = "Academic Diversity Disparity Map - African American / Black")+
   theme(legend.position="bottom", 
         legend.justification = "center",
         legend.title = element_blank(),
         legend.margin = 
-          margin(t = 0, r = 1.5, b = 0, l = 0, unit = "cm"))+
-  guides(size = guide_legend(order=1))+
-  annotate("text", x = -103, y = 14, 
-           label = "Percent Student African American/Black")+
-  annotate("text", x = -82, y = 14, 
-           label = "Percent Disparity")+
-  coord_sf(xlim = c(-125, -60), 
-           ylim = c(15, 50), clip = "off")
-
+          margin(t = 0, r = 1.5, b = 0, l = 0, unit = "cm"),
+        text = element_text(family = "Roboto Light"))
 ggplotly(aabk, tooltip = c('text'))
 
 ## NEXT: WORK ON LEGENDS AND LEGEND TITLES...
 ## #https://towardsdatascience.com/how-to-create-a-plotly-visualization-and-embed-it-on-websites-517c1a78568b
+# calculate all minorities...
+# shiny app landing page is all minorities with dropdown for group
