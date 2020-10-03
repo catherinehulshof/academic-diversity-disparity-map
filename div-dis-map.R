@@ -1,5 +1,10 @@
-## Catherine Hulshof
+## Catherine Hulshof, PhD
+## Biodiversity Data Science
+## Virginia Commonwealth University
+## Richmond, VA 23284
+## 
 ## Academic Diversity Disparity Map
+## 
 ## The following code uses data from the National Center for Education Statistics to create a map demonstrating the disparity between percent minority faculty and percent minority students across universities and colleges in the United States
 
 #### Install and load packages ####
@@ -11,6 +16,7 @@ library(ggthemes)
 library(tidyverse)
 library(urbnmapr)
 library(rnaturalearth)
+library(plotly)
 
 #devtools::install_github("UrbanInstitute/urbnmapr")
 #devtools::install_github("ropensci/rnaturalearth")
@@ -35,11 +41,11 @@ inst <- inst %>%
 
 # ICLEVEL: Level of Institution. Four or more years.
 # CARNEGIE: Carnegie classification: Remove faith-based 
-# HDEGOFR1: Highest Degree Offered. Bachelors to Doctorate degrees.
+# HLOFFER: Highest Degree Offered. Bachelors to Doctorate
 # C18SZSET: Institution Classification. At least four years.
 sites <- inst %>% 
   filter(ICLEVEL==1,HLOFFER>=5,
-         C18SZSET>=6,
+         C18SZSET>=15,
          CARNEGIE!=51) 
 
 #HBCU <- sites %>% 
@@ -68,19 +74,6 @@ pr_basemap <- pr_basemap %>%
 #### Combine maps ####
 states_sf_pr=rbind(states_sf, pr_basemap)
 
-#### Map institutions ####
-#### 4-year institutions (ICLEVEL==1)
-#### Offers Bachelor's degree or higher (HLOFFER>=5)
-
-states_sf_pr %>% 
-  ggplot(aes()) +
-  geom_sf(fill = "grey", color = "#ffffff")+
-  theme_map()+
-  geom_point(data = sites, 
-             aes(x = LONGITUD, y = LATITUDE), 
-             size = .5, fill = "darkblue")+
-  coord_sf(xlim = c(-125, -60), ylim = c(15, 50), expand = FALSE)
-
 #### Merge student data from DRVEF2018 ####
 
 #PctEnrWh white
@@ -101,16 +94,8 @@ axes.student <-
 
 perc.student <- read_csv('data_raw/DRVEF2018.csv') %>% 
   select(all_of(axes.student)) %>% 
-  right_join(sites,by = "UNITID",keep=F)
+  right_join(sites,by = "UNITID")
 
-## sample map with size by percent hispanic, some unis with no data...will need to remove.
-states_sf_pr %>% 
-  ggplot(aes()) +
-  geom_sf(fill = "grey", color = "#ffffff")+
-  theme_map()+
-  geom_point(data = perc.student, 
-             aes(x = LONGITUD, y = LATITUDE,size = PCTENRHS))+
-  coord_sf(xlim = c(-125, -60), ylim = c(15, 50), expand = FALSE)
 
 #### Merge faculty data from S2018_IS ####
 #### HRTOTLT, HRAIANT, HRAIANM, HRAIANW, HRASIAT,HRASIAM, HRASIAW, HRBKAAT, HRBKAAM, HRBKAAW, HRHISPT, HRHISPM, HRHISPW, HRNHPIT, HRNHPIM, HRNHPIW, HRWHITT, HRWHITM, HRWHITW, HR2MORT, HR2MORM, HR2MORW
@@ -119,19 +104,84 @@ axes.faculty <-
   c('UNITID', 'HRTOTLT', 'HRAIANT', 'HRAIANM', 'HRAIANW', 'HRASIAT','HRASIAM', 'HRASIAW', 'HRBKAAT', 'HRBKAAM', 'HRBKAAW', 'HRHISPT', 'HRHISPM', 'HRHISPW', 'HRNHPIT', 'HRNHPIM', 'HRNHPIW', 'HRWHITT', 'HRWHITM', 'HRWHITW', 'HR2MORT', 'HR2MORM', 'HR2MORW')
 
 perc.faculty <- read_csv('data_raw/S2018_IS.csv') %>% 
+  filter(ARANK == 0, #All ranks
+         FACSTAT == 0, #All full-time instructional staff
+         SISCAT == 1) %>% #All full-time instructional staff
   select(all_of(axes.faculty)) %>% 
-  right_join(perc.student,by = "UNITID",keep=F)
+  right_join(perc.student,by = "UNITID")
 
-perc.faculty$disp_hs <- perc.faculty$PCTENRHS-
-  (perc.faculty$HRHISPT/perc.faculty$HRTOTLT*100)
+# Hispanic/Latinx disparity
+perc.faculty$disp_hs <- round(perc.faculty$PCTENRHS-
+  (perc.faculty$HRHISPT/perc.faculty$HRTOTLT*100),2)
+disparity_hs <- filter(perc.faculty, !is.na(disp_hs))
 
-states_sf_pr %>% 
+# Black disparity
+perc.faculty$faculty_bk <- round(perc.faculty$HRBKAAT/perc.faculty$HRTOTLT*100,2)
+perc.faculty$disp_bk <- round(perc.faculty$PCTENRBK-
+                                perc.faculty$faculty_bk,2)
+disparity_bk <- filter(perc.faculty, !is.na(disp_bk))
+
+
+#### Map institutions ####
+#### 4-year institutions (ICLEVEL==1)
+#### Offers Bachelor's degree or higher (HLOFFER>=5)
+#### 4-year large (C18SZSET>=15)
+#### Remove faith-based institutions (CARNEGIE!=51) 
+#### All faculty ranks (ARANK==0)
+#### All full-time instructional staff (FACSTAT == 0)
+#### Allfull-time insructional staff (SISCAT == 1)
+
+#### Disparity Map - Hispanic/LatinX ####
+hisp <- states_sf_pr %>% 
   ggplot(aes()) +
   geom_sf(fill = "grey", color = "#ffffff")+
   theme_map()+
-  geom_point(data = perc.faculty, 
-             aes(x = LONGITUD, y = LATITUDE,color = disp_hs))+
-  scale_color_viridis_c()+
-  coord_sf(xlim = c(-125, -60), ylim = c(15, 50), expand = FALSE)
+  geom_point(data = disparity_hs, 
+             aes(x = LONGITUD, y = LATITUDE,
+                 color = disp_hs, size = PCTENRHS), shape = 19)+
+  scale_color_viridis_c(option = "magma")+
+  labs(title = "Academic Diversity Disparity Map - Hispanic/Latinx")+
+  theme(legend.position="bottom", 
+        legend.justification = "center",
+        legend.title = element_blank(),
+        legend.margin = 
+          margin(t = 0, r = 1.5, b = 0, l = 0, unit = "cm"))+
+  guides(size = guide_legend(order=1))+
+  annotate("text", x = -103, y = 14, 
+           label = "Percent Student Hispanic/Latinx")+
+  annotate("text", x = -82, y = 14, 
+           label = "Percent Disparity")+
+  coord_sf(xlim = c(-125, -60), 
+                  ylim = c(15, 50), clip = "off")
 
-### Initial plotting thoughts: need to winnow down list of institutions: Big10, Top 100 USNews, remove points with no values, could this be construed wrong?
+#### Disparity Map - African American/Black ####
+aabk <- ggplot()+
+  geom_sf(data=states_sf_pr, fill = "grey", color = "#ffffff")+
+  theme_map()+
+  geom_point(data = disparity_bk, 
+             aes(x = LONGITUD, y = LATITUDE,
+                 color = disp_bk, size = PCTENRBK,
+                 text = paste(INSTNM, "<br>", 
+                              "Student:", PCTENRBK,"%", "<br>",
+                              "Faculty:", faculty_bk,"%",'<br>',
+                              "Disparity:", disp_bk,"%")), 
+             shape = 19)+
+  scale_color_viridis_c(option="magma")+
+  labs(title = "Academic Diversity Disparity Map - African American/Black")+
+  theme(legend.position="bottom", 
+        legend.justification = "center",
+        legend.title = element_blank(),
+        legend.margin = 
+          margin(t = 0, r = 1.5, b = 0, l = 0, unit = "cm"))+
+  guides(size = guide_legend(order=1))+
+  annotate("text", x = -103, y = 14, 
+           label = "Percent Student African American/Black")+
+  annotate("text", x = -82, y = 14, 
+           label = "Percent Disparity")+
+  coord_sf(xlim = c(-125, -60), 
+           ylim = c(15, 50), clip = "off")
+
+ggplotly(aabk, tooltip = c('text'))
+
+## NEXT: WORK ON LEGENDS AND LEGEND TITLES...
+## #https://towardsdatascience.com/how-to-create-a-plotly-visualization-and-embed-it-on-websites-517c1a78568b
