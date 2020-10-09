@@ -18,10 +18,11 @@ library(urbnmapr)
 library(rnaturalearth)
 library(plotly)
 library(extrafont)
+library(shiny)
 
 #font_import(path = "C:/Users/*insert your user name*/AppData/Local/Microsoft/Windows/Fonts", pattern = ".TTF")
 
-loadfonts()
+#loadfonts()
 #devtools::install_github("UrbanInstitute/urbnmapr")
 #devtools::install_github("ropensci/rnaturalearth")
 #https://urbaninstitute.github.io/urbnmapr/index.html
@@ -197,3 +198,25 @@ ggplotly(aabk, tooltip = c('text'))
 ## #https://towardsdatascience.com/how-to-create-a-plotly-visualization-and-embed-it-on-websites-517c1a78568b
 # calculate all minorities...
 # shiny app landing page is all minorities with dropdown for group
+
+ui <- fluidPage(
+  selectizeInput(
+    inputId = "minority", 
+    label = "Select a Group", 
+    choices = unique(disparity$group), 
+    selected = "All",
+    multiple = TRUE
+  ),
+  plotlyOutput(outputId = "p")
+)
+
+server <- function(input, output, ...) {
+  output$p <- renderPlotly({
+    plot_ly(txhousing, x = ~date, y = ~median) %>%
+      filter(group %in% input$group) %>%
+      group_by(group) %>%
+      add_lines()
+  })
+}
+
+shinyApp(ui, server)
