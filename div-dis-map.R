@@ -124,18 +124,32 @@ perc.faculty <- read_csv('data_raw/S2018_IS.csv') %>%
   select(all_of(axes.faculty)) %>% 
   right_join(perc.student,by = "UNITID")
 
-# Hispanic / Latinx Disparity
-perc.faculty$faculty_hs <- round(perc.faculty$HRHISPT/perc.faculty$HRTOTLT*100,2)
-perc.faculty$disp_hs <- round(perc.faculty$PCTENRHS-
-  perc.faculty$faculty_hs,2)
-disparity_hs <- filter(perc.faculty, !is.na(disp_hs))
+#### build a smaller dataset to work with ####
+faculty <- perc.faculty[,c(1:23, 102, 103)]
+faculty_long <- faculty %>%
+  select(UNITID, HRTOTLT, HRHISPT, HRBKAAT, HRASIAT, 
+         HRAIANT, HRWHITT,HR2MORT) %>% 
+  rename(Hispanic = HRHISPT, Black = HRBKAAT, Asian = HRASIAT, 
+         AmeriIndian = HRAIANT, White = HRWHITT,TwoPlus = HR2MORT) %>%
+  gather(Faculty_Group, Faculty_PCT, Hispanic:TwoPlus) %>% 
+  mutate(Faculty_PCT, Faculty_PCT = round(Faculty_PCT/HRTOTLT*100,2)) %>% 
+  select(UNITID, Faculty_Group, Faculty_PCT)
+  
+student <- perc.faculty[,c(1, 24:33)]
+student_long <- student %>%
+  rename(Hispanic = PCTENRHS, Black = PCTENRBK, Asian = PCTENRAP, 
+         AmeriIndian = PCTENRAN, White = PCTENRWH) %>% 
+  gather(Student_Group, Student_PCT, White:AmeriIndian) %>% 
+  select(UNITID, Student_Group, Student_PCT)
 
-# African American / Black Disparity
-perc.faculty$faculty_bk <- round(perc.faculty$HRBKAAT/perc.faculty$HRTOTLT*100,2)
-perc.faculty$disp_bk <- round(perc.faculty$PCTENRBK-
-                                perc.faculty$faculty_bk,2)
-disparity_bk <- filter(perc.faculty, !is.na(disp_bk))
+#### Join by UNITID and GROUP
+groups_fs <- merge(faculty_long,student_long, by.x=c('UNITID', 'Faculty_Group'),by.y = c('UNITID', 'Student_Group'),all=FALSE)
+groups_fs$Disparity <- groups_fs$Student_PCT - groups_fs$Faculty_PCT
+names(groups_fs)[2] <- c('Group')
 
+# merge LATITUD, LONGITUD and INSTNM
+loc <- select(perc.faculty, UNITID, LONGITUD, LATITUDE, INSTNM)
+groups_fs <- merge(groups_fs, loc, by = "UNITID")
 
 #### Map institutions ####
 #### 4-year institutions (ICLEVEL==1)
@@ -147,16 +161,17 @@ disparity_bk <- filter(perc.faculty, !is.na(disp_bk))
 #### All full-time instructional staff (SISCAT == 1)
 
 #### Disparity Map - Hispanic/LatinX ####
+disparity_hs <- subset(groups_fs, Group == "Hispanic")
 hisp <- ggplot() +
   geom_sf(data=states_sf_pr, fill = "grey", color = "#ffffff")+
   theme_map()+
   geom_point(data = disparity_hs, 
              aes(x = LONGITUD, y = LATITUDE,
-                 color = disp_hs, size = PCTENRHS,
+                 color = Disparity, size = Student_PCT,
                  text = paste(INSTNM, "<br>", 
-                              "Student: ", PCTENRHS,"%", "<br>",
-                              "Faculty: ", faculty_hs,"%",'<br>',
-                              "Disparity: ", disp_hs,"%", sep = "")), 
+                              "Student: ", Student_PCT,"%", "<br>",
+                              "Faculty: ", Faculty_PCT,"%",'<br>',
+                              "Disparity: ", Disparity,"%", sep = "")), 
                  shape = 19)+
   scale_color_viridis_c(option = "magma", 
                         name = "Disparity (%)")+
@@ -168,19 +183,22 @@ hisp <- ggplot() +
         legend.margin = 
           margin(t = 0, r = 1.5, b = 0, l = 0, unit = "cm"),
         text = element_text(family = "Roboto Light"))
-
 ggplotly(hisp, tooltip = c('text'))
+
+
 #### Disparity Map - African American / Black ####
+disparity_bk <- subset(groups_fs, Group == "Black")
+
 aabk <- ggplot()+
   geom_sf(data=states_sf_pr, fill = "grey", color = "#ffffff")+
   theme_map()+
   geom_point(data = disparity_bk, 
              aes(x = LONGITUD, y = LATITUDE,
-                 color = disp_bk, size = PCTENRBK,
+                 color = Disparity, size = PCTENRBK,
                  text = paste(INSTNM, "<br>", 
-                              "Student: ", PCTENRBK,"%", "<br>",
-                              "Faculty: ", faculty_bk,"%",'<br>',
-                              "Disparity :", disp_bk,"%", sep = "")), 
+                              "Student: ", Student_PCT,"%", "<br>",
+                              "Faculty: ", Faculty_PCT,"%",'<br>',
+                              "Disparity :", Disparity,"%", sep = "")), 
              shape = 19)+
   scale_color_viridis_c(option="magma", 
                         name = "Disparity (%)")+
@@ -194,29 +212,8 @@ aabk <- ggplot()+
         text = element_text(family = "Roboto Light"))
 ggplotly(aabk, tooltip = c('text'))
 
-## NEXT: WORK ON LEGENDS AND LEGEND TITLES...
+
+## NEXT: WORK ON LEGENDS AND LEGEND TITLES...####
 ## #https://towardsdatascience.com/how-to-create-a-plotly-visualization-and-embed-it-on-websites-517c1a78568b
 # calculate all minorities...
 # shiny app landing page is all minorities with dropdown for group
-
-ui <- fluidPage(
-  selectizeInput(
-    inputId = "minority", 
-    label = "Select a Group", 
-    choices = unique(disparity$group), 
-    selected = "All",
-    multiple = TRUE
-  ),
-  plotlyOutput(outputId = "p")
-)
-
-server <- function(input, output, ...) {
-  output$p <- renderPlotly({
-    plot_ly(txhousing, x = ~date, y = ~median) %>%
-      filter(group %in% input$group) %>%
-      group_by(group) %>%
-      add_lines()
-  })
-}
-
-shinyApp(ui, server)
