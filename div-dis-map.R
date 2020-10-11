@@ -126,20 +126,24 @@ perc.faculty <- read_csv('data_raw/S2018_IS.csv') %>%
 
 #### build a smaller dataset to work with ####
 faculty <- perc.faculty[,c(1:23, 102, 103)]
+faculty$TOTAL <- rowSums(faculty[, c(6,9,12,15)])
 faculty_long <- faculty %>%
   select(UNITID, HRTOTLT, HRHISPT, HRBKAAT, HRASIAT, 
-         HRAIANT, HRWHITT,HR2MORT) %>% 
-  rename(Hispanic = HRHISPT, Black = HRBKAAT, Asian = HRASIAT, 
-         AmeriIndian = HRAIANT, White = HRWHITT,TwoPlus = HR2MORT) %>%
-  gather(Faculty_Group, Faculty_PCT, Hispanic:TwoPlus) %>% 
+         HRAIANT, HRWHITT, TOTAL) %>% 
+  rename(Hispanic = HRHISPT, Black = HRBKAAT, 
+         Asian = HRASIAT, AmeriIndian = HRAIANT,
+         White = HRWHITT) %>%
+  gather(Faculty_Group, Faculty_PCT, Hispanic:TOTAL) %>% 
   mutate(Faculty_PCT, Faculty_PCT = round(Faculty_PCT/HRTOTLT*100,2)) %>% 
   select(UNITID, Faculty_Group, Faculty_PCT)
   
 student <- perc.faculty[,c(1, 24:33)]
+student$TOTAL <- rowSums(student[, 3:6])
 student_long <- student %>%
+  relocate(TOTAL, .after = PCTENRAN) %>%
   rename(Hispanic = PCTENRHS, Black = PCTENRBK, Asian = PCTENRAP, 
          AmeriIndian = PCTENRAN, White = PCTENRWH) %>% 
-  gather(Student_Group, Student_PCT, White:AmeriIndian) %>% 
+  gather(Student_Group, Student_PCT, White:TOTAL) %>% 
   select(UNITID, Student_Group, Student_PCT)
 
 #### Join by UNITID and GROUP
@@ -215,5 +219,5 @@ ggplotly(aabk, tooltip = c('text'))
 
 ## NEXT: WORK ON LEGENDS AND LEGEND TITLES...####
 ## #https://towardsdatascience.com/how-to-create-a-plotly-visualization-and-embed-it-on-websites-517c1a78568b
-# calculate all minorities...
 # shiny app landing page is all minorities with dropdown for group
+# inset puerto rico map

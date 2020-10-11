@@ -11,15 +11,9 @@ ui <- fluidPage(
     titlePanel("Diversity Disparity"),
     sidebarLayout(
         sidebarPanel(
-            selectInput(inputId = "group",  # Give the input a name
+            selectInput(inputId = "Group",  # Give the input a name
                         label = "1. Select Group",  # Give the input a label to be displayed in the app
-                        choices = c("All" = "all","African American / Black" = "black","Asian" = "asian","Hispanic / Latinx" = "hispanic","American Indian / Alaska Native" = "amnat","Native Hawaiian / Pacific Islander" = "hawaii"), selected = "All"),  # Create the choices that can be selected. e.g. Display "All" and link to value "all"
-            selectInput(inputId = "Gender", 
-                        label = "2. Select Gender", 
-                        choices = c("All", "Female","Male"),
-                                    selected = "All"),
-            textInput(inputId = "text", 
-                      label = "4. Enter some text to be displayed", "")
+                        choices = c("All" = "TOTAL","African American / Black" = "black","American Indian / Alaska Native" = "amnat", "Asian" = "asian","Hispanic / Latinx" = "hispanic"), selected = "All")  # Create the choices that can be selected. e.g. Display "All" and link to value "all"
         ),
         mainPanel()
     )
