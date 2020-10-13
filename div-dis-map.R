@@ -222,8 +222,6 @@ ggplotly(aabk, tooltip = c('text'))
 # shiny app landing page is all minorities with dropdown for group
 #write.csv(groups_fs,"shiny_interactivemap/data/group_div_disp.csv",quote=F)
 # add faculty asian + pacific islander to reflect grouping of students
-# change font of dropdown
-# add title reflecting grouping
 # add legend indicating size of data point = students
-
+# enable zoom
 # inset puerto rico map

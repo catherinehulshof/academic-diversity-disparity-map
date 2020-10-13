@@ -2,13 +2,15 @@ library(shiny)  # Required to run any Shiny app
 library(ggplot2)  # For creating pretty plots
 library(dplyr)  # For filtering and manipulating data
 library(agridat)  # The package where the data comes from
+library(tableHTML) # for make_css function
 
 # Loading data ----
-groups_fs <- read.csv('data/group_div_disp.csv')
+#groups_fs <- read.csv('data/group_div_disp.csv')
 
 # ui.R ----
 ui <- fluidPage(
-    titlePanel("Diversity Disparity"),
+    tags$head(tags$style(HTML("* {font-family: Roboto Light;}"))),
+    titlePanel("Academic Diversity Disparity Map"),
     sidebarLayout(
         sidebarPanel(
             selectInput(inputId = "Group",  # Give the input a name
@@ -16,8 +18,11 @@ ui <- fluidPage(
                         choices = c("All" = "TOTAL","African American / Black" = "Black","American Indian / Alaska Native" = "AmeriIndian", "Asian" = "Asian","Hispanic / Latinx" = "Hispanic"), selected = "All")  # Create the choices that can be selected. e.g. Display "All" and link to value "all"
         ),
         mainPanel(plotlyOutput("plot1"))
-    )
+        ),
+    
 )
+
+choicesVec <- c("All" = "TOTAL","African American / Black" = "Black","American Indian / Alaska Native" = "AmeriIndian", "Asian" = "Asian","Hispanic / Latinx" = "Hispanic")
 
 # server.R ----
 server <- function(input, output) {
@@ -36,7 +41,7 @@ server <- function(input, output) {
             scale_color_viridis_c(option = "magma", 
                                   name = "Disparity (%)")+
             scale_size("Percent Student", range = c(0, 2))+
-            labs(title = "Academic Diversity Disparity Map")+
+            labs(title = paste("Group:",names(choicesVec)[choicesVec ==input$Group],sep=" "))+
             theme(legend.position="bottom", 
                   legend.justification = "center",
                   legend.title = element_blank(),
