@@ -124,7 +124,7 @@ perc.faculty <- read_csv('data_raw/S2018_IS.csv') %>%
   select(all_of(axes.faculty)) %>% 
   right_join(perc.student,by = "UNITID")
 
-#### build a smaller dataset to work with ####
+#### Rebuild dataset for shiny ####
 faculty <- perc.faculty[,c(1:23, 102, 103)]
 faculty$TOTAL <- rowSums(faculty[, c(6,9,12,15)])
 faculty_long <- faculty %>%
@@ -198,7 +198,7 @@ aabk <- ggplot()+
   theme_map()+
   geom_point(data = disparity_bk, 
              aes(x = LONGITUD, y = LATITUDE,
-                 color = Disparity, size = PCTENRBK,
+                 color = Disparity, size = Student_PCT,
                  text = paste(INSTNM, "<br>", 
                               "Student: ", Student_PCT,"%", "<br>",
                               "Faculty: ", Faculty_PCT,"%",'<br>',
@@ -220,4 +220,10 @@ ggplotly(aabk, tooltip = c('text'))
 ## NEXT: WORK ON LEGENDS AND LEGEND TITLES...####
 ## #https://towardsdatascience.com/how-to-create-a-plotly-visualization-and-embed-it-on-websites-517c1a78568b
 # shiny app landing page is all minorities with dropdown for group
+#write.csv(groups_fs,"shiny_interactivemap/data/group_div_disp.csv",quote=F)
+# add faculty asian + pacific islander to reflect grouping of students
+# change font of dropdown
+# add title reflecting grouping
+# add legend indicating size of data point = students
+
 # inset puerto rico map
