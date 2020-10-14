@@ -1,7 +1,9 @@
 # academic-diversity-disparity-map
 A map demonstrating the disparity between percent minority students and percent minority faculty for colleges and university across the United States.
 
-Data from Integrated Postsecondary Education Data System from the National Center for Education Statistics: 
+Data from U.S. Department of Education. Institute of Education Sciences, National Center for Education Statistics.
+
+Access data using the Integrated Postsecondary Education Data System from the National Center for Education Statistics: 
 https://nces.ed.gov/ipeds/use-the-data 
 
 The following tables were used:
