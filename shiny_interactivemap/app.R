@@ -15,12 +15,13 @@ ui <- fluidPage(
         sidebarPanel(
             selectInput(inputId = "Group",  # Give the input a name
                         label = "1. Select Group",  # input label displayed in app
-                        choices = c("All" = "TOTAL","African American / Black" = "Black","American Indian / Alaska Native" = "AmeriIndian", "Asian" = "Asian","Hispanic / Latinx" = "Hispanic"), selected = "All")  # Create the choices that can be selected. e.g. Display "All" and link to value "all"
-        ),
+                        choices = c("All" = "TOTAL","African American / Black" = "Black","American Indian / Alaska Native" = "AmeriIndian", "Asian" = "Asian / Pacific Islander","Hispanic / Latinx" = "Hispanic"), selected = "All"), 
+            br(), 
+            p("Data from: U.S. Department of Education. Institute of Education Sciences, National Center for Education Statistics."),
+            p(HTML("Catherine Hulshof, PhD<br/>Biodiversity Data Science<br/>Virginia Commonwealth University"))),
         mainPanel(plotlyOutput("plot1"))
-        ),
-    
-)
+        )
+    )
 
 choicesVec <- c("All" = "TOTAL","African American / Black" = "Black","American Indian / Alaska Native" = "AmeriIndian", "Asian" = "Asian","Hispanic / Latinx" = "Hispanic")
 
@@ -30,9 +31,9 @@ server <- function(input, output) {
         disp <- ggplot() +
             geom_sf(data=states_sf_pr, fill = "grey", color = "#ffffff")+
             theme_map()+
-            geom_point(data = groups_fs[groups_fs$Group == input$Group,], 
+            geom_point(data = groups_fs[groups_fs$Group == input$Group,], alpha = 0.8, position = "jitter",
                        aes(x = LONGITUD, y = LATITUDE,
-                           color = Disparity, size = Student_PCT,
+                           color = Student_PCT, size = Disparity,
                            text = paste(INSTNM, "<br>", 
                                         "Student: ", Student_PCT,"%", "<br>",
                                         "Faculty: ", Faculty_PCT,"%",'<br>',

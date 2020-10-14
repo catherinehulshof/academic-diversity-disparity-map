@@ -115,7 +115,7 @@ perc.student <- read_csv('data_raw/DRVEF2018.csv') %>%
 #HR2MORT, HR2MORM, HR2MORW: Two or more races total/men/women
 
 axes.faculty <-
-  c('UNITID', 'HRTOTLT', 'HRAIANT', 'HRAIANM', 'HRAIANW', 'HRASIAT','HRASIAM', 'HRASIAW', 'HRBKAAT', 'HRBKAAM', 'HRBKAAW', 'HRHISPT', 'HRHISPM', 'HRHISPW', 'HRNHPIT', 'HRNHPIM', 'HRNHPIW', 'HRWHITT', 'HRWHITM', 'HRWHITW', 'HR2MORT', 'HR2MORM', 'HR2MORW')
+  c('UNITID', 'HRTOTLT', 'HRAIANT', 'HRAIANM', 'HRAIANW', 'HRASIAT','HRASIAM', 'HRASIAW', 'HRBKAAT', 'HRBKAAM', 'HRBKAAW', 'HRHISPT', 'HRHISPM', 'HRHISPW', 'HRNHPIT', 'HRNHPIM', 'HRNHPIW', 'HRWHITT', 'HRWHITM', 'HRWHITW', 'HR2MORT', 'HR2MORM', 'HR2MORW', 'HRNHPIT')
 
 perc.faculty <- read_csv('data_raw/S2018_IS.csv') %>% 
   filter(ARANK == 0, #All ranks
@@ -127,6 +127,7 @@ perc.faculty <- read_csv('data_raw/S2018_IS.csv') %>%
 #### Rebuild dataset for shiny ####
 faculty <- perc.faculty[,c(1:23, 102, 103)]
 faculty$TOTAL <- rowSums(faculty[, c(6,9,12,15)])
+faculty$HRASIAT <- faculty$HRASIAT+faculty$HRNHPIT
 faculty_long <- faculty %>%
   select(UNITID, HRTOTLT, HRHISPT, HRBKAAT, HRASIAT, 
          HRAIANT, HRWHITT, TOTAL) %>% 
@@ -221,7 +222,6 @@ ggplotly(aabk, tooltip = c('text'))
 ## #https://towardsdatascience.com/how-to-create-a-plotly-visualization-and-embed-it-on-websites-517c1a78568b
 # shiny app landing page is all minorities with dropdown for group
 #write.csv(groups_fs,"shiny_interactivemap/data/group_div_disp.csv",quote=F)
-# add faculty asian + pacific islander to reflect grouping of students
 # add legend indicating size of data point = students
-# enable zoom
+# add text describing zoom
 # inset puerto rico map
