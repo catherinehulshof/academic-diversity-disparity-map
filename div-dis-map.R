@@ -19,6 +19,7 @@ library(rnaturalearth)
 library(plotly)
 library(extrafont)
 library(shiny)
+library(ggpubr)
 
 #font_import(path = "C:/Users/*insert your user name*/AppData/Local/Microsoft/Windows/Fonts", pattern = ".TTF")
 
@@ -215,19 +216,19 @@ aabk <- ggplot()+
         legend.title = element_blank(),
         legend.margin = 
           margin(t = 0, r = 1.5, b = 0, l = 0, unit = "cm"),
-        text = element_text(family = "Roboto Light"))+
-  annotate("text", x = -121.5, y = 20,label = "Student \nPopulation  (%)")+
-  geom_point(aes(x = -115, y = 20),size = 0)+
-  geom_point(aes(x = -111, y = 20),size = 1)+
-  geom_point(aes(x = -107, y = 20),size = 2)+
-  geom_point(aes(x = -103, y = 20),size = 3)+
-  annotate("text", x = -112.5, y = 20,label = "0")+
-  annotate("text", x = -109, y = 20,label = "20")+
-  annotate("text", x = -105, y = 20,label = "40")+
-  annotate("text", x = -100, y = 20,label = "60")
+        text = element_text(family = "Roboto Light"))
+  #annotate("text", x = -121.5, y = 20,label = "Student \nPopulation  (%)")+
+  #geom_point(aes(x = -115, y = 20),size = 0)+
+  #geom_point(aes(x = -111, y = 20),size = 1)+
+  #geom_point(aes(x = -107, y = 20),size = 2)+
+  #geom_point(aes(x = -103, y = 20),size = 3)+
+  #annotate("text", x = -112.5, y = 20,label = "0")+
+  #annotate("text", x = -109, y = 20,label = "20")+
+  #annotate("text", x = -105, y = 20,label = "40")+
+  #annotate("text", x = -100, y = 20,label = "60")
 
 ggplotly(aabk, tooltip = c('text'))
-
+a <- get_legend(aabk)
 
 ## NEXT: WORK ON LEGENDS AND LEGEND TITLES...####
 ## #https://towardsdatascience.com/how-to-create-a-plotly-visualization-and-embed-it-on-websites-517c1a78568b
