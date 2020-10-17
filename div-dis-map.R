@@ -200,8 +200,7 @@ aabk <- ggplot()+
   geom_sf(data=states_sf_pr, fill = "grey", color = "#ffffff")+
   theme_map()+
   geom_point(data = disparity_bk, 
-             aes(x = LONGITUD, y = LATITUDE,
-                 color = Disparity, size = Student_PCT,
+             aes(x = LONGITUD, y = LATITUDE,size = Student_PCT, color = Disparity,
                  text = paste(INSTNM, "<br>", 
                               "Student: ", Student_PCT,"%", "<br>",
                               "Faculty: ", Faculty_PCT,"%",'<br>',
@@ -217,6 +216,7 @@ aabk <- ggplot()+
         legend.margin = 
           margin(t = 0, r = 1.5, b = 0, l = 0, unit = "cm"),
         text = element_text(family = "Roboto Light"))
+
   #annotate("text", x = -121.5, y = 20,label = "Student \nPopulation  (%)")+
   #geom_point(aes(x = -115, y = 20),size = 0)+
   #geom_point(aes(x = -111, y = 20),size = 1)+
@@ -228,51 +228,9 @@ aabk <- ggplot()+
   #annotate("text", x = -100, y = 20,label = "60")
 
 ggplotly(aabk, tooltip = c('text'))
-a <- get_legend(aabk)
 
-## NEXT: WORK ON LEGENDS AND LEGEND TITLES...####
 ## #https://towardsdatascience.com/how-to-create-a-plotly-visualization-and-embed-it-on-websites-517c1a78568b
 
 #write.csv(groups_fs,"shiny_interactivemap/data/group_div_disp.csv",quote=F)
-# add legend indicating size of data point = students...make dynamic zoom/scale
 # add text describing zoom
 # inset puerto rico map...
-
-# get PR boundary with high definition
-pr <- us_boundaries(type="state", resolution = "low") %>% 
-  filter(state_abbr %in% c("PR"))
-
-# make a box around pr (a grid with an n=1) for inset
-pr_box <- st_make_grid(pr, n = 1)
-boxes<-data.frame(maxlat = 19.2,minlat = 17.2,maxlong = -64.6,minlong = -68.6, id="1")
-boxes<-transform(boxes, laby=(maxlat +minlat )/2, labx=(maxlong+minlong )/2)
-
-#centroid
-pr_cent <- st_centroid(pr_box)
-
-#cast multipolygon into single polygons
-pr_cast <- st_cast(pr, "POLYGON")
-
-#find the main island of pr
-plot(pr_cast$geometry[3])
-
-# Main map of PR
-p1 <- ggplot() + 
-  geom_sf(data = pr_cast$geometry[3], color = "grey50", fill = "white", alpha=0.6) + 
-  geom_point(aes(x=-66.86870,y=17.96955),size=2.5, color="black")+#guanica
-  labs(x = NULL, y = NULL) +
-  theme(axis.text.y = element_text(angle = 90, hjust = 0.5)) +
-  theme_bw() + 
-  coord_sf() + 
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        plot.background = element_blank(),
-        panel.border = element_blank(),
-        panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank(),
-        plot.margin = unit(c(0, 0, 20,0), "mm"))
-
-p1
