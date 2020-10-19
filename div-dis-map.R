@@ -10,6 +10,9 @@
 #### Install and load packages ####
 
 #install.packages(c("",...))
+#devtools::install_github("ropensci/rnaturalearthhires")
+#install.packages("rnaturalearthhires", repos = "http://packages.ropensci.org", type = "source")
+
 
 library(sf)
 library(ggthemes)
@@ -28,7 +31,7 @@ library(ggpubr)
 
 #### Load and Select Data ####
 
-inst <- read_csv('data_raw/HD2018.csv')
+inst <- read_csv('data/HD2018.csv')
 
 ak <- inst %>%
   filter(STABBR == "AK", ICLEVEL == 1, HLOFFER >= 5) %>%
@@ -109,7 +112,7 @@ axes.student <-
     'ENRTOT'
   )
 
-perc.student <- read_csv('data_raw/DRVEF2018.csv') %>%
+perc.student <- read_csv('data/DRVEF2018.csv') %>%
   select(all_of(axes.student)) %>%
   right_join(sites, by = "UNITID")
 
@@ -152,7 +155,7 @@ axes.faculty <-
     'HRNHPIT'
   )
 
-perc.faculty <- read_csv('data_raw/S2018_IS.csv') %>%
+perc.faculty <- read_csv('data/S2018_IS.csv') %>%
   filter(ARANK == 0, #All ranks
          FACSTAT == 0, #All full-time instructional staff
          SISCAT == 1) %>% #All full-time instructional staff
@@ -273,8 +276,5 @@ hisp <- ggplot() +
     text = element_text(family = "Roboto Light")
   )
 ggplotly(hisp, tooltip = c('text'))
-
-
-## #https://towardsdatascience.com/how-to-create-a-plotly-visualization-and-embed-it-on-websites-517c1a78568b
 
 #write.csv(groups_fs,"shiny_interactivemap/data/group_div_disp.csv",quote=F)

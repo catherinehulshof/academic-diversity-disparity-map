@@ -1,0 +1,12 @@
+name: shiny_interactivemap
+title:
+username:
+account: catherine-hulshof
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3050225
+bundleId: 3759961
+url: https://catherine-hulshof.shinyapps.io/shiny_interactivemap/
+when: 1603143283.49319
+asMultiple: FALSE
+asStatic: FALSE
