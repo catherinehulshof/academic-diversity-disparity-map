@@ -1,5 +1,5 @@
 # academic-diversity-disparity-map
-A map demonstrating the disparity between percent minority students and percent minority faculty for colleges and university across the United States.
+A map demonstrating the disparity between minority students and faculty at colleges and university across the United States.
 
 Read more here: https://biodiversityresearchlab.com/field-notes/academic-diversity-disparity
 
